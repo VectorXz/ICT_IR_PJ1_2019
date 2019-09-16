@@ -298,10 +298,10 @@ public class Index {
 			for (Map.Entry<Integer,List<Integer>> item : postingLists.entrySet()) {
 				int termID = item.getKey();
 				int noDoc = item.getValue().size();
-				bfc.write(termID);
-				bfc.write(noDoc);
+				bfc.writeInt(termID);
+				bfc.writeInt(noDoc);
 				for (Integer i : item.getValue()) {
-					bfc.write(i);
+					bfc.writeInt(i);
 				}
 			}
 			
@@ -337,6 +337,109 @@ public class Index {
 			 *       
 			 */
 			
+			Map<Integer, List<Integer>> tempPostingLists = new TreeMap<Integer, List<Integer>>();
+			
+			bf1.seek(0);
+			bf2.seek(0);
+			
+			int first = bf1.readInt();
+			int second = bf2.readInt();
+			
+			System.out.println("--VV--");
+			System.out.println(first);
+			System.out.println(second);
+			first = bf1.readInt();
+			second = bf2.readInt();
+			System.out.println(first);
+			System.out.println(second);
+			
+			//Broken VVVVV
+			
+			while(first != -1 && second != -1) {
+				if(first < second) {
+					if(tempPostingLists.containsKey(first)) {
+						int docCount = bf1.read();
+						List<Integer> noDoc = new ArrayList<Integer>();
+						for(int i=0; i<docCount; i++) {
+							int docId = bf1.read();
+							noDoc.add(docId);
+						}
+						for (Integer docId : noDoc) {
+							tempPostingLists.get(first).add(docId);
+						}
+					} else if (!tempPostingLists.containsKey(first)) {
+						int docCount = bf1.read();
+						List<Integer> noDoc = new ArrayList<Integer>();
+						for(int i=0; i<docCount; i++) {
+							int docId = bf1.read();
+							noDoc.add(docId);
+						}
+						tempPostingLists.put(first, noDoc);
+					}
+				} else if (first == second) {
+					if(tempPostingLists.containsKey(first)) {
+						int docCount1 = bf1.read();
+						int docCount2 = bf2.read();
+						List<Integer> noDoc = new ArrayList<Integer>();
+						for(int i=0; i<docCount1; i++) {
+							int docId = bf1.read();
+							if(!noDoc.contains(docId)) {
+								noDoc.add(docId);
+							}
+						}
+						for(int i=0; i<docCount2; i++) {
+							int docId = bf2.read();
+							if(!noDoc.contains(docId)) {
+								noDoc.add(docId);
+							}
+						}
+						
+						for (Integer docId : noDoc) {
+							tempPostingLists.get(first).add(docId);
+						}
+					} else if (!tempPostingLists.containsKey(first)) {
+						int docCount1 = bf1.read();
+						int docCount2 = bf2.read();
+						List<Integer> noDoc = new ArrayList<Integer>();
+						for(int i=0; i<docCount1; i++) {
+							int docId = bf1.read();
+							if(!noDoc.contains(docId)) {
+								noDoc.add(docId);
+							}
+						}
+						for(int i=0; i<docCount2; i++) {
+							int docId = bf2.read();
+							if(!noDoc.contains(docId)) {
+								noDoc.add(docId);
+							}
+						}
+						
+						tempPostingLists.put(first, noDoc);
+					}
+				} else if(first > second) {
+					if(tempPostingLists.containsKey(first)) {
+						int docCount = bf2.read();
+						List<Integer> noDoc = new ArrayList<Integer>();
+						for(int i=0; i<docCount; i++) {
+							int docId = bf2.read();
+							noDoc.add(docId);
+						}
+						for (Integer docId : noDoc) {
+							tempPostingLists.get(first).add(docId);
+						}
+					} else if (!tempPostingLists.containsKey(first)) {
+						int docCount = bf2.read();
+						List<Integer> noDoc = new ArrayList<Integer>();
+						for(int i=0; i<docCount; i++) {
+							int docId = bf2.read();
+							noDoc.add(docId);
+						}
+						tempPostingLists.put(first, noDoc);
+					}
+				}
+				first = bf1.read();
+				second = bf2.read();
+			}
 			
 			
 			bf1.close();
