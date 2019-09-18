@@ -172,11 +172,11 @@ public class P1Tester {
 	public static void main(String [] args)
 	{
 		//Test the "small" dataset
-		testIndex("Basic", "./datasets/small", "./index/small");
+		//testIndex("Basic", "./datasets/small", "./index/small");
 		//testQuery("Basic", "./index/small", queriesSmall, "./output/small");
 		
 		//Test the "large" dataset
-		//testIndex("Basic", "./datasets/large", "./index/large");
+		testIndex("Basic", "./datasets/large", "./index/large");
 		//testQuery("Basic", "./index/large", queriesLarge, "./output/large");
 		
 		//Test the "citeseer" dataset
