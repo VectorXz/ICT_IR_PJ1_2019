@@ -21,7 +21,7 @@ public class BasicIndex implements BaseIndex {
 		 * TODO: Your code here
 		 *       Write the given postings list to the given file.
 		 */
-		System.out.println("Hello World!");
+		//System.out.println("Hello World!");
 		
 		int totalBytes = (2+p.getList().size())*4;
 		ByteBuffer bb = ByteBuffer.allocate(totalBytes);

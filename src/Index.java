@@ -52,7 +52,7 @@ public class Index {
 		 * TODO: Your code here
 		 * 
 		 */
-		System.out.println("I'm going to write " + posting.getTermId());
+		//System.out.println("I'm going to write " + posting.getTermId());
 		postingDict.get(posting.getTermId()).setFirst(fc.position());
 		index.writePosting(fc, posting);
 	}
@@ -358,169 +358,18 @@ public class Index {
 			 * 
 			 */
 			
-			/* NEED TO REWORKS ON THIS*/
-
-			// Map<Integer, List<Integer>> oldTemp = new TreeMap<Integer, List<Integer>>();
-
-			// List<PostingList> tempPostingLists = new ArrayList<PostingList>();
-
 			bf1.seek(0);
 			bf2.seek(0);
-
-			int first, second = -1;
-			try {
-				first = bf1.readInt();
-			} catch (IOException ex) {
-				System.out.println("First file is ended!");
-				break;
-			}
-			try {
-				second = bf2.readInt();
-			} catch (IOException ex) {
-				System.out.println("Second file is ended!");
-				break;
-			}
-
-			int finish = 0;
-
-			mf.seek(0);
-
-			while (true) {
-
-				if (first < second) {
-					// System.out.println(first+"<"+second);
-					// System.out.println("Save first and move");
-					// PostingList tempPL = new PostingList(first);
-					mf.writeInt(first);
-					first = bf1.readInt();
-					int noDoc = first;
-					mf.writeInt(noDoc);
-					// System.out.println("Total doc : "+noDoc);
-					for (int i = 0; i < noDoc; i++) {
-						first = bf1.readInt();
-						// System.out.println("DocID = "+first);
-						// tempPL.getList().add(first);
-						mf.writeInt(first);
-					}
-					// tempPostingLists.add(tempPL);
-					// move pointer next
-					try {
-						first = bf1.readInt();
-					} catch (IOException ex) {
-						// System.out.println("First file is ended!");
-						finish = 1;
-					}
-				} else if (first == second) {
-					// System.out.println(first+"="+second);
-					// System.out.println("Merge & Move");
-					PostingList tempPL = new PostingList(first);
-					first = bf1.readInt();
-					second = bf2.readInt();
-					int noDoc1 = first;
-					int noDoc2 = second;
-					for (int i = 0; i < noDoc1; i++) {
-						first = bf1.readInt();
-						// System.out.println("DocID = "+first);
-						if (!tempPL.getList().contains(first)) {
-							tempPL.getList().add(first);
-						}
-					}
-					for (int i = 0; i < noDoc2; i++) {
-						second = bf2.readInt();
-						// System.out.println("DocID = "+second);
-						if (!tempPL.getList().contains(second)) {
-							tempPL.getList().add(second);
-						}
-					}
-					// tempPostingLists.add(tempPL);
-					// write to file
-					mf.writeInt(tempPL.getTermId());
-					mf.writeInt(tempPL.getList().size());
-					Collections.sort(tempPL.getList());
-					for (Integer docID : tempPL.getList()) {
-						mf.writeInt(docID);
-					}
-					// move pointer next
-					try {
-						first = bf1.readInt();
-					} catch (IOException ex) {
-						// System.out.println("First file is ended!");
-						finish = 1;
-					}
-					try {
-						second = bf2.readInt();
-					} catch (IOException ex) {
-						// System.out.println("Second file is ended!");
-						finish = 2;
-					}
-				} else if (first > second) {
-					// System.out.println(first+">"+second);
-					// System.out.println("Save second and move");
-					// postingList tempPL = new PostingList(second);p
-					mf.writeInt(second);
-					second = bf2.readInt();
-					int noDoc = second;
-					mf.writeInt(noDoc);
-					for (int i = 0; i < noDoc; i++) {
-						second = bf2.readInt();
-						// System.out.println("DocID = "+second);
-						// tempPL.getList().add(second);
-						mf.writeInt(second);
-					}
-					// tempPostingLists.add(tempPL);
-					// move pointer next
-					try {
-						second = bf2.readInt();
-					} catch (IOException ex) {
-						// System.out.println("Second file is ended!");
-						finish = 1;
-					}
-				}
-
-				if (finish == 1) {
-					// System.out.println("Keeping leftovers in file 2");
-					// System.out.println("current cursor "+second);
-					while (true) {
-						mf.writeInt(second);
-						int noDoc = bf2.readInt();
-						mf.writeInt(noDoc);
-						for (int i = 0; i < noDoc; i++) {
-							int docId = bf2.readInt();
-							mf.writeInt(docId);
-						}
-
-						try {
-							second = bf2.readInt();
-						} catch (IOException ex) {
-							// System.out.println("Ended writing leftover of second file!");
-							break;
-						}
-					}
-					break;
-				} else if (finish == 2) {
-					// System.out.println("Keeping leftovers in file 1");
-					// System.out.println("current cursor "+first);
-					while (true) {
-						mf.writeInt(first);
-						int noDoc = bf1.readInt();
-						mf.writeInt(noDoc);
-						for (int i = 0; i < noDoc; i++) {
-							int docId = bf1.readInt();
-							mf.writeInt(docId);
-						}
-
-						try {
-							second = bf1.readInt();
-						} catch (IOException ex) {
-							// System.out.println("Ended writing leftover of first file!");
-							break;
-						}
-					}
-					break;
-				}
-
-			}
-			// System.out.println("END +"+b2.getName());
+			System.out.println(bf1.readInt());
+			System.out.println(bf1.readInt());
+			System.out.println(bf1.readInt());
+			System.out.println(bf2.readInt());
+			System.out.println(bf2.readInt());
+			System.out.println(bf2.readInt());
+			
+			//READ > COMPARE > MERGE > CREATE POSTING LIST > SEND TO WRITEPOSTING FUNC
+			
+			System.out.println("====");
 
 			bf1.close();
 			bf2.close();
