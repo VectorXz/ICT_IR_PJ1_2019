@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -43,7 +44,9 @@ public class Query {
 		/*
 		 * TODO: Your code here
 		 */
-		return null;
+		long pos = posDict.get(termId);
+		fc.position(pos);
+		return index.readPosting(fc);
 	}
 	
 	
@@ -115,7 +118,21 @@ public class Query {
 		 *       return the list of IDs of the documents that match the query
 		 *      
 		 */
-		return null;
+		
+		List<Integer> result = new ArrayList<Integer>();
+		List<String> words = Arrays.asList(query.split(" "));
+		for (String word : words) {
+			if(termDict.containsKey(word)) {
+				int termID = termDict.get(word);
+				PostingList temp = readPosting(indexFile.getChannel(), termID);
+				System.out.println(temp.getTermId()+" "+temp.getList());
+			}
+		}
+		//System.out.println(posDict);
+		//System.out.println(freqDict);
+		//System.out.println(docDict);
+		//System.out.println(termDict);
+		return result;
 		
 	}
 	
@@ -137,6 +154,10 @@ public class Query {
 		 * no results found
 		 * 
          * */
+    	if(res.size()==0) {
+    		System.out.println("no results found");
+    		return "No result!";
+    	}
     	
     	return null;
     }

@@ -11,8 +11,36 @@ public class BasicIndex implements BaseIndex {
 		 * TODO: Your code here
 		 *       Read and return the postings list from the given file.
 		 */
+		ByteBuffer buf = ByteBuffer.allocate(4);
 		
-		return null;
+		PostingList postl = null;
+		try {
+			fc.read(buf);
+			buf.flip();
+			int termID = buf.getInt();
+			buf.clear();
+			
+			fc.read(buf);
+			buf.flip();
+			int noDoc = buf.getInt();
+			buf.clear();
+			
+			postl = new PostingList(termID);
+			for(int i = 0;i<noDoc;i++) {
+				fc.read(buf);
+				buf.flip();
+				postl.getList().add(buf.getInt());
+				buf.clear();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (postl != null) {
+			return postl;
+		} else {
+			return null;
+		}
 	}
 
 	@Override
