@@ -16,6 +16,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+class ListComparator<T extends Comparable<T>> implements Comparator<List<T>> {
+
+	  @Override
+	  public int compare(List<T> o1, List<T> o2) {
+	    return o1.size()-o2.size();
+	  }
+
+	}
+
 public class Query {
 
 	// Term id -> position in index file
@@ -47,6 +56,53 @@ public class Query {
 		long pos = posDict.get(termId);
 		fc.position(pos);
 		return index.readPosting(fc);
+	}
+	
+	public List<Integer> listIntersec(List<Integer> l1, List<Integer> l2) {
+		List<Integer> result = new ArrayList<Integer>();
+		
+		if(l1.size() == 0) {
+			return new ArrayList<Integer>();
+		} else if(l2.size() == 0) {
+			return new ArrayList<Integer>();
+		}
+		int ptr1 = l1.get(0);
+		int ptr2 = l2.get(0);
+		//System.out.println("Initialize : "+ptr1+" "+ptr2);
+		int finish = 0;
+		while (true) {
+			if(ptr1 == ptr2) {
+				//System.out.println(ptr1+"="+ptr2);
+				result.add(ptr1);
+				//System.out.println("Added : "+result);
+				//move ptr
+				if(l1.indexOf(ptr1)<l1.size()-1) {
+					ptr1 = l1.get(l1.indexOf(ptr1)+1);
+				} else { finish++; }
+				if(l2.indexOf(ptr2)<l2.size()-1) {
+					ptr2 = l2.get(l2.indexOf(ptr2)+1);
+				} else { finish++; }
+			} else if (ptr1 < ptr2) {
+				//System.out.println(ptr1+"<"+ptr2);
+				//move ptr1
+				if(l1.indexOf(ptr1)<l1.size()-1) {
+					ptr1 = l1.get(l1.indexOf(ptr1)+1);
+				} else { finish++; }
+			} else if (ptr2 < ptr1) {
+				//System.out.println(ptr1+">"+ptr2);
+				//move ptr2
+				if(l2.indexOf(ptr2)<l2.size()-1) {
+					ptr2 = l2.get(l2.indexOf(ptr2)+1);
+				} else { finish++; }
+			}
+			
+			if(finish == 2) {
+				//System.out.println("All end > break!");
+				break;
+			}
+		}
+		//System.out.println(result);
+		return result;
 	}
 	
 	
@@ -121,19 +177,38 @@ public class Query {
 		
 		List<Integer> result = new ArrayList<Integer>();
 		List<String> words = Arrays.asList(query.split(" "));
+		List<List<Integer>> allpl = new ArrayList<List<Integer>>();
+		
 		for (String word : words) {
 			if(termDict.containsKey(word)) {
 				int termID = termDict.get(word);
 				PostingList temp = readPosting(indexFile.getChannel(), termID);
-				System.out.println(temp.getTermId()+" "+temp.getList());
+				allpl.add(temp.getList());
+				//System.out.println(temp.getTermId()+" "+temp.getList());
+			} else {
+				return result;
 			}
 		}
-		//System.out.println(posDict);
-		//System.out.println(freqDict);
-		//System.out.println(docDict);
-		//System.out.println(termDict);
-		return result;
 		
+		//System.out.println(allpl);
+		Collections.sort(allpl, new ListComparator<>());
+		//System.out.println(allpl);
+		
+		if(allpl.size() == 1) {
+			return allpl.get(0);
+		} else {
+			int i = 0;
+			List<Integer> fin = allpl.get(0);
+			while(true) {
+				List<Integer> l2 = allpl.get(i+1);
+				fin = listIntersec(fin, l2);
+				i++;
+				if(i==(allpl.size()-1)) {
+					break;
+				}
+			}
+			return fin;
+		}
 	}
 	
     String outputQueryResult(List<Integer> res) {
@@ -154,12 +229,18 @@ public class Query {
 		 * no results found
 		 * 
          * */
+    	StringBuilder str = new StringBuilder();
     	if(res.size()==0) {
-    		System.out.println("no results found");
-    		return "No result!";
+    		//System.out.println("no results found");
+    		str.append("no results found");
+    		return str.toString();
+    	} else {
+    		for (Integer i : res) {
+    			//System.out.println(docDict.get(i));
+    			str.append(docDict.get(i)+"\n");
+			}
+    		return str.toString();
     	}
-    	
-    	return null;
     }
 	
 	public static void main(String[] args) throws IOException {

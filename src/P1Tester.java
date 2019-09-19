@@ -173,7 +173,7 @@ public class P1Tester {
 	{
 		//Test the "small" dataset
 		//testIndex("Basic", "./datasets/small", "./index/small");
-		testQuery("Basic", "./index/small", queriesSmall, "./output/small");
+		//testQuery("Basic", "./index/small", queriesSmall, "./output/small");
 		
 		//Test the "large" dataset
 		//testIndex("Basic", "./datasets/large", "./index/large");
@@ -181,6 +181,6 @@ public class P1Tester {
 		
 		//Test the "citeseer" dataset
 		//testIndex("Basic", "./datasets/citeseer", "./index/citeseer");
-		//testQuery("Basic", "./index/citeseer", queriesCiteseer, "./output/citeseer");
+		testQuery("Basic", "./index/citeseer", queriesCiteseer, "./output/citeseer");
 	}
 }
