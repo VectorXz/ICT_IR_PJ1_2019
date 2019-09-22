@@ -14,15 +14,16 @@ public class BasicIndex implements BaseIndex {
 		ByteBuffer buf = ByteBuffer.allocate(4);
 		
 		PostingList postl = null;
+		int termID, noDoc;
 		try {
 			fc.read(buf);
 			buf.flip();
-			int termID = buf.getInt();
+			termID = buf.getInt();
 			buf.clear();
 			
 			fc.read(buf);
 			buf.flip();
-			int noDoc = buf.getInt();
+			noDoc = buf.getInt();
 			buf.clear();
 			
 			postl = new PostingList(termID);
@@ -32,15 +33,15 @@ public class BasicIndex implements BaseIndex {
 				postl.getList().add(buf.getInt());
 				buf.clear();
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
+			return null;
 		}
 		if (postl != null) {
 			return postl;
-		} else {
-			return null;
 		}
+		return null;
 	}
 
 	@Override
@@ -51,8 +52,7 @@ public class BasicIndex implements BaseIndex {
 		 */
 		//System.out.println("Hello World!");
 		
-		int totalBytes = (2+p.getList().size())*4;
-		ByteBuffer bb = ByteBuffer.allocate(totalBytes);
+		ByteBuffer bb = ByteBuffer.allocate((2+p.getList().size())*4);
 		bb.putInt(p.getTermId());
 		bb.putInt(p.getList().size());
 		for(int i=0;i<p.getList().size();i++) {

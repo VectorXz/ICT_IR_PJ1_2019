@@ -15,9 +15,11 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -184,9 +186,12 @@ public class Index {
 		File[] dirlist = rootdir.listFiles();
 
 		/* For each block */
+		long startTime;
+		long endTime;
+		startTime = System.currentTimeMillis(); 
 		for (File block : dirlist) {
 
-			List<Pair<Integer, Integer>> tempTermDoc = new ArrayList<Pair<Integer, Integer>>();
+			HashSet<Pair<Integer, Integer>> tempTermDoc = new HashSet<Pair<Integer, Integer>>();
 
 			File blockFile = new File(outputDirname, block.getName());
 			// System.out.println("Processing block "+block.getName());
@@ -215,20 +220,24 @@ public class Index {
 						 */
 
 						// System.out.println(token);
+						Pair<Integer, Integer> t = null;
+						int termId;
 						if (termDict.containsKey(token)) {
-							// System.out.println("Exists!");
-							int termId = termDict.get(token);
-							Pair<Integer, Integer> tempPair = new Pair<Integer, Integer>(termId, docId);
-							tempTermDoc.add(tempPair);
+							//System.out.println("Exists!");
+							termId = termDict.get(token);
+							t = new Pair<Integer, Integer>(termId, docId);
+							tempTermDoc.add(t);
 						} else {
 							termDict.put(token, ++wordIdCounter);
-							// System.out.println("Added!");
-							int termId = termDict.get(token);
-							Pair<Integer, Integer> tempPair = new Pair<Integer, Integer>(termId, docId);
-							tempTermDoc.add(tempPair);
+							//System.out.println("Added!");
+							termId = termDict.get(token);
+							t = new Pair<Integer, Integer>(termId, docId);
+							tempTermDoc.add(t);
 						}
 					}
 				}
+				
+				//System.out.println("ended "+docId);
 				reader.close();
 			}
 
@@ -249,80 +258,49 @@ public class Index {
 
 			// System.out.println(tempTermDoc.size());
 			// System.out.println(tempTermDoc);
-			Collections.sort(tempTermDoc, new ListComparator());
+			List<Pair<Integer, Integer>> tempTermDoc2 = new ArrayList<Pair<Integer, Integer>>(tempTermDoc);
+			Collections.sort(tempTermDoc2, new ListComparator());
 			// System.out.println(bfc);
 			// System.out.println(tempTermDoc.size());
-			//System.out.println(tempTermDoc);
+			//System.out.println(tempTermDoc2);
 
 			PostingList temp = null;
-			for (Pair<Integer, Integer> item : tempTermDoc) {
+			TreeSet<Integer> docList = new TreeSet<Integer>();
+			for (Pair<Integer, Integer> item : tempTermDoc2) {
 				if (temp == null) {
 					temp = new PostingList(item.getFirst());
-					temp.getList().add(item.getSecond());
+					docList.add(item.getSecond());
 				} else if (item.getFirst() == temp.getTermId()) {
-					if(!temp.getList().contains(item.getSecond())) {
-						temp.getList().add(item.getSecond());
-					}
+					docList.add(item.getSecond());
 				} else {
+					List<Integer> tList = new ArrayList<Integer>(docList);
+					temp = new PostingList(temp.getTermId(), tList);
 					writePosting(bfc.getChannel(), temp);
 					temp = new PostingList(item.getFirst());
-					temp.getList().add(item.getSecond());
+					docList.clear();
+					docList.add(item.getSecond());
 				}
 				Pair<Long, Integer> tempPair = new Pair<Long, Integer>(null, temp.getList().size());
 				postingDict.put(item.getFirst(), tempPair);
 			}
+			List<Integer> tList = new ArrayList<Integer>(docList);
+			temp = new PostingList(temp.getTermId(), tList);
 			writePosting(bfc.getChannel(), temp);
 			
 			//System.out.println(postingDict);
 
-			/*
-			 * Map<Integer, List<Integer>> postingLists = new TreeMap<Integer,
-			 * List<Integer>>();
-			 * 
-			 * build up final posting lists for (Pair<Integer, Integer> item : tempTermDoc)
-			 * { if(!postingLists.containsKey(item.getFirst())) { List<Integer> tempList =
-			 * new ArrayList<Integer>(); tempList.add(item.getSecond());
-			 * postingLists.put(item.getFirst(), tempList); } else {
-			 * if(!postingLists.get(item.getFirst()).contains(item.getSecond())) {
-			 * postingLists.get(item.getFirst()).add(item.getSecond()); } } }
-			 * System.out.println(postingLists); for (Map.Entry<Integer,List<Integer>>
-			 * postingList : postingLists.entrySet()) { PostingList tempPL = new
-			 * PostingList(postingList.getKey(),postingList.getValue()); Pair<Long, Integer>
-			 * tempPair = new Pair<Long, Integer>(null, tempPL.getList().size());
-			 * postingDict.put(postingList.getKey(), tempPair);
-			 * writePosting(bfc.getChannel(), tempPL); }
-			 */
-
-			/*
-			 * WRONG WRITING!
-			 */
-
-			/*
-			 * for (Pair<Integer, Integer> item : tempTermDoc) {
-			 * if(!postingLists.containsKey(item.getFirst())) { List<Integer> tempList = new
-			 * ArrayList<Integer>(); tempList.add(item.getSecond());
-			 * postingLists.put(item.getFirst(), tempList); } else {
-			 * if(!postingLists.get(item.getFirst()).contains(item.getSecond())) {
-			 * postingLists.get(item.getFirst()).add(item.getSecond()); } } }
-			 * 
-			 * System.out.println(postingLists);
-			 * 
-			 * bfc.seek(0);
-			 * 
-			 * for (Map.Entry<Integer,List<Integer>> item : postingLists.entrySet()) { int
-			 * termID = item.getKey(); int noDoc = item.getValue().size();
-			 * bfc.writeInt(termID); bfc.writeInt(noDoc); for (Integer i : item.getValue())
-			 * { bfc.writeInt(i); } }
-			 */
-
 			bfc.close();
 		}
+		endTime = System.currentTimeMillis();
+		System.out.println("\t[Build Terms + Write posting] Time Used: "+((endTime - startTime)/1000.0)+" secs\n");
+		
 
 		/* Required: output total number of files. */
 		// System.out.println("Total Files Indexed: "+totalFileCount);
-
+		
 		/* Merge blocks */
-		while (true) {
+		startTime = System.currentTimeMillis();
+		while (true) { 
 			if (blockQueue.size() <= 1)
 				break;
 
@@ -348,128 +326,83 @@ public class Index {
 			
 			bf1.seek(0);
 			bf2.seek(0);
-			int first = bf1.readInt();
-			int second = bf2.readInt();
 			
-			int finish = -1;
-			//System.out.println("=======");
-			//System.out.println(postingDict);
+			PostingList l1 = index.readPosting(bf1.getChannel());
+			PostingList l2 = index.readPosting(bf2.getChannel());
+			PostingList merged = null;
+			TreeSet<Integer> docList = null;
+			List<Integer> converter = null;
 			
-			while(true) {
-				if(first < second) {
-					PostingList pl = new PostingList(first);
-					int noDoc = bf1.readInt();
-					for(int i=0;i<noDoc;i++) {
-						int docId = bf1.readInt();
-						pl.getList().add(docId);
+			while(l1 != null && l2 != null) {
+				docList = new TreeSet<Integer>();
+				if(l1.getTermId() == l2.getTermId()) {
+					for (Integer docId : l1.getList()) {
+						docList.add(docId);
 					}
-					writePosting(mf.getChannel(), pl);
-					postingDict.get(first).setSecond(pl.getList().size());
+					for (Integer docId : l2.getList()) {
+						docList.add(docId);
+					}
+					converter = new ArrayList<Integer>(docList);
+					merged = new PostingList(l1.getTermId(), converter);
+					writePosting(mf.getChannel(), merged);
+					postingDict.get(l1.getTermId()).setSecond(merged.getList().size());
 					
-					try {
-						first = bf1.readInt();
-					} catch (IOException ex) {
-						// System.out.println("First file is ended!");
-						finish = 1;
+					l1 = index.readPosting(bf1.getChannel());
+					l2 = index.readPosting(bf2.getChannel());
+				} else if (l1.getTermId() < l2.getTermId()) {
+					//save l1
+					for (Integer docId : l1.getList()) {
+						docList.add(docId);
 					}
-				} else if(first == second) {
-					//System.out.println("Merging"+first+" "+second);
-					PostingList tempPL = new PostingList(first);
-					int noDoc1 = bf1.readInt();
-					int noDoc2 = bf2.readInt();
-					for (int i = 0; i < noDoc1; i++) {
-						int docId = bf1.readInt();
-						if (!tempPL.getList().contains(docId)) {
-							tempPL.getList().add(docId);
-						}
-					}
-					for (int i = 0; i < noDoc2; i++) {
-						int docId = bf2.readInt();
-						// System.out.println("DocID = "+second);
-						if (!tempPL.getList().contains(docId)) {
-							tempPL.getList().add(docId);
-						}
-					}
-					Collections.sort(tempPL.getList());
-					writePosting(mf.getChannel(), tempPL);
-					postingDict.get(first).setSecond(tempPL.getList().size());
-					//System.out.println(postingDict);
+					converter = new ArrayList<Integer>(docList);
+					merged = new PostingList(l1.getTermId(), converter);
+					writePosting(mf.getChannel(), merged);
+					postingDict.get(l1.getTermId()).setSecond(merged.getList().size());
 					
-					try {
-						first = bf1.readInt();
-					} catch (IOException ex) {
-						// System.out.println("First file is ended!");
-						finish = 1;
+					l1 = index.readPosting(bf1.getChannel());
+				} else if (l2.getTermId() < l1.getTermId()) {
+					//save l2
+					for (Integer docId : l2.getList()) {
+						docList.add(docId);
 					}
-					try {
-						second = bf2.readInt();
-					} catch (IOException ex) {
-						// System.out.println("Second file is ended!");
-						finish = 2;
-					}
-				} else if (first>second) {
-					PostingList pl = new PostingList(second);
-					int noDoc = bf2.readInt();
-					for(int i=0;i<noDoc;i++) {
-						int docId = bf2.readInt();
-						pl.getList().add(docId);
-					}
-					writePosting(mf.getChannel(), pl);
-					postingDict.get(first).setSecond(pl.getList().size());
+					converter = new ArrayList<Integer>(docList);
+					merged = new PostingList(l2.getTermId(), converter);
+					writePosting(mf.getChannel(), merged);
+					postingDict.get(l2.getTermId()).setSecond(merged.getList().size());
 					
-					try {
-						second = bf2.readInt();
-					} catch (IOException ex) {
-						// System.out.println("Second file is ended!");
-						finish = 2;
-					}
-				}
-				
-				if(finish == 1) {
-					// System.out.println("Keeping leftovers in file 2");
-					while (true) {
-						PostingList pl = new PostingList(second);
-						int noDoc = bf2.readInt();
-						for(int i=0;i<noDoc;i++) {
-							int docId = bf2.readInt();
-							pl.getList().add(docId);
-						}
-						writePosting(mf.getChannel(), pl);
-						postingDict.get(second).setSecond(pl.getList().size());
-						
-						try {
-							second = bf2.readInt();
-						} catch (IOException ex) {
-							// System.out.println("Second file is ended!");
-							break;
-						}
-					}
-					break;
-				} else if(finish == 2) {
-					// System.out.println("Keeping leftovers in file 1");
-					while (true) {
-						PostingList pl = new PostingList(first);
-						int noDoc = bf1.readInt();
-						for(int i=0;i<noDoc;i++) {
-							int docId = bf1.readInt();
-							pl.getList().add(docId);
-						}
-						writePosting(mf.getChannel(), pl);
-						postingDict.get(first).setSecond(pl.getList().size());
-						
-						try {
-							first = bf1.readInt();
-						} catch (IOException ex) {
-							// System.out.println("First file is ended!");
-							break;
-						}
-					}
-					break;
+					l2 = index.readPosting(bf2.getChannel());
 				}
 			}
 			
-			//System.out.println("=======");
-			//System.out.println(postingDict);
+			if(l1 == null) {
+				//keep L2
+				while(l2 != null) {
+					docList = new TreeSet<Integer>();
+					for (Integer docId : l2.getList()) {
+						docList.add(docId);
+					}
+					converter = new ArrayList<Integer>(docList);
+					merged = new PostingList(l2.getTermId(), converter);
+					writePosting(mf.getChannel(), merged);
+					postingDict.get(l2.getTermId()).setSecond(merged.getList().size());
+					
+					l2 = index.readPosting(bf2.getChannel());
+				}
+			} else if(l2 == null) {
+				//keep L1
+				while(l1 != null) {
+					docList = new TreeSet<Integer>();
+					for (Integer docId : l1.getList()) {
+						docList.add(docId);
+					}
+					converter = new ArrayList<Integer>(docList);
+					merged = new PostingList(l1.getTermId(), converter);
+					writePosting(mf.getChannel(), merged);
+					postingDict.get(l1.getTermId()).setSecond(merged.getList().size());
+					
+					l1 = index.readPosting(bf1.getChannel());
+				}
+			}
 			
 			bf1.close();
 			bf2.close();
@@ -478,6 +411,8 @@ public class Index {
 			b2.delete(); // comment to keep tempIndex file
 			blockQueue.add(combfile);
 		}
+		endTime = System.currentTimeMillis();
+		System.out.println("\t[Merge Time] Time Used: "+((endTime - startTime)/1000.0)+" secs\n");
 
 		/* Dump constructed index back into file system */
 		File indexFile = blockQueue.removeFirst();

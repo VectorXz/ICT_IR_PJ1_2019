@@ -53,8 +53,7 @@ public class Query {
 		/*
 		 * TODO: Your code here
 		 */
-		long pos = posDict.get(termId);
-		fc.position(pos);
+		fc.position(posDict.get(termId));
 		return index.readPosting(fc);
 	}
 	
