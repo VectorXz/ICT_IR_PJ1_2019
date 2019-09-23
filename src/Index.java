@@ -186,9 +186,6 @@ public class Index {
 		File[] dirlist = rootdir.listFiles();
 
 		/* For each block */
-		long startTime;
-		long endTime;
-		startTime = System.currentTimeMillis(); 
 		for (File block : dirlist) {
 
 			HashSet<Pair<Integer, Integer>> tempTermDoc = new HashSet<Pair<Integer, Integer>>();
@@ -291,15 +288,12 @@ public class Index {
 
 			bfc.close();
 		}
-		endTime = System.currentTimeMillis();
-		System.out.println("\t[Build Terms + Write posting] Time Used: "+((endTime - startTime)/1000.0)+" secs\n");
 		
 
 		/* Required: output total number of files. */
 		// System.out.println("Total Files Indexed: "+totalFileCount);
 		
 		/* Merge blocks */
-		startTime = System.currentTimeMillis();
 		while (true) { 
 			if (blockQueue.size() <= 1)
 				break;
@@ -411,8 +405,6 @@ public class Index {
 			b2.delete(); // comment to keep tempIndex file
 			blockQueue.add(combfile);
 		}
-		endTime = System.currentTimeMillis();
-		System.out.println("\t[Merge Time] Time Used: "+((endTime - startTime)/1000.0)+" secs\n");
 
 		/* Dump constructed index back into file system */
 		File indexFile = blockQueue.removeFirst();

@@ -61,12 +61,13 @@ public class Query {
 		List<Integer> result = new ArrayList<Integer>();
 		
 		if(l1.size() == 0) {
-			return new ArrayList<Integer>();
+			return result;
 		} else if(l2.size() == 0) {
-			return new ArrayList<Integer>();
+			return result;
 		}
 		int ptr1 = l1.get(0);
 		int ptr2 = l2.get(0);
+		int i1 = 0, i2 = 0;
 		//System.out.println("Initialize : "+ptr1+" "+ptr2);
 		int finish = 0;
 		while (true) {
@@ -75,23 +76,23 @@ public class Query {
 				result.add(ptr1);
 				//System.out.println("Added : "+result);
 				//move ptr
-				if(l1.indexOf(ptr1)<l1.size()-1) {
-					ptr1 = l1.get(l1.indexOf(ptr1)+1);
+				if(i1<l1.size()-1) {
+					ptr1 = l1.get(++i1);
 				} else { finish++; }
-				if(l2.indexOf(ptr2)<l2.size()-1) {
-					ptr2 = l2.get(l2.indexOf(ptr2)+1);
+				if(i2<l2.size()-1) {
+					ptr2 = l2.get(++i2);
 				} else { finish++; }
 			} else if (ptr1 < ptr2) {
 				//System.out.println(ptr1+"<"+ptr2);
 				//move ptr1
-				if(l1.indexOf(ptr1)<l1.size()-1) {
-					ptr1 = l1.get(l1.indexOf(ptr1)+1);
+				if(i1<l1.size()-1) {
+					ptr1 = l1.get(++i1);
 				} else { finish++; }
 			} else if (ptr2 < ptr1) {
 				//System.out.println(ptr1+">"+ptr2);
 				//move ptr2
-				if(l2.indexOf(ptr2)<l2.size()-1) {
-					ptr2 = l2.get(l2.indexOf(ptr2)+1);
+				if(i2<l2.size()-1) {
+					ptr2 = l2.get(++i2);
 				} else { finish++; }
 			}
 			
@@ -177,11 +178,12 @@ public class Query {
 		List<Integer> result = new ArrayList<Integer>();
 		List<String> words = Arrays.asList(query.split(" "));
 		List<List<Integer>> allpl = new ArrayList<List<Integer>>();
-		
+		PostingList temp = null;
+		int termID;
 		for (String word : words) {
 			if(termDict.containsKey(word)) {
-				int termID = termDict.get(word);
-				PostingList temp = readPosting(indexFile.getChannel(), termID);
+				termID = termDict.get(word);
+				temp = readPosting(indexFile.getChannel(), termID);
 				allpl.add(temp.getList());
 				//System.out.println(temp.getTermId()+" "+temp.getList());
 			} else {
